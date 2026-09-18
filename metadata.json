@@ -1,0 +1,5 @@
+{
+  "name": "MedCitas - Portal Médico y Gestión de Citas",
+  "description": "Plataforma médica móvil para gestión de citas sanitarias, historial clínico, recetas electrónicas y notificaciones push configurables con modo oscuro personalizable.",
+  "requestFramePermissions": ["notifications"]
+}

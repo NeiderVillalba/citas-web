@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Profesional de la salud</title>
+  <desc id="desc">Avatar ilustrado de un profesional médico</desc>
+  <rect width="160" height="160" rx="32" fill="#E0F2FE"/>
+  <circle cx="80" cy="62" r="29" fill="#F3C9AC"/>
+  <path d="M47 62c0-25 16-39 34-39 22 0 36 15 33 39-8-9-19-14-33-14-13 0-24 5-34 14Z" fill="#163B63"/>
+  <path d="M31 160c4-35 25-55 49-55s45 20 49 55H31Z" fill="#FFF"/>
+  <path d="M57 108h46l10 52H47l10-52Z" fill="#F8FAFC"/>
+  <path d="M79 108h3v24h-3z" fill="#006399"/>
+  <path d="M71 118h18v7H71z" fill="#006399"/>
+  <path d="M61 121c6 7 13 10 19 10s13-3 19-10" fill="none" stroke="#D7A98E" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">MedCitas</title>
+  <desc id="desc">Símbolo médico azul con cruz blanca</desc>
+  <defs>
+    <linearGradient id="brand" x1="12" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#006399"/>
+      <stop offset="1" stop-color="#002A54"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="24" fill="url(#brand)"/>
+  <path d="M48 20c-12.2 0-22 9.8-22 22 0 17.4 22 34 22 34s22-16.6 22-34c0-12.2-9.8-22-22-22Z" fill="#A7E3FF" opacity=".26"/>
+  <path d="M42 28h12v14h14v12H54v14H42V54H28V42h14V28Z" fill="#fff"/>
+  <circle cx="71" cy="25" r="8" fill="#38BDF8"/>
+</svg>
