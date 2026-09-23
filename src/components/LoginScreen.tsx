@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   BadgeCheck, 
@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { MEDCITAS_LOGO_URL } from '../data/mockData';
 import { playPushNotificationSound, triggerHaptic } from '../utils/audio';
+import { ApiError, citasApi } from '../api/citasApi';
+import type { ActivePlan } from '../api/citasApi';
 
 interface LoginScreenProps {
   onLoginSuccess: (userName?: string) => void;
@@ -29,9 +31,19 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark }) => {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [identifier, setIdentifier] = useState('ana.garcia@saludmail.com');
-  const [password, setPassword] = useState('••••••••••••');
-  const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [documentType, setDocumentType] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [plans, setPlans] = useState<ActivePlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const [plansError, setPlansError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   
@@ -42,10 +54,69 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
   const [biometricVerified, setBiometricVerified] = useState(false);
   const [activeSocial, setActiveSocial] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isRegisterMode) return;
+
+    let isCurrent = true;
+    setIsLoadingPlans(true);
+    setPlansError('');
+    citasApi.getActivePlans()
+      .then((activePlans) => {
+        if (isCurrent) setPlans(activePlans);
+      })
+      .catch(() => {
+        if (isCurrent) setPlansError('No fue posible cargar los planes. Puedes continuar sin elegir uno.');
+      })
+      .finally(() => {
+        if (isCurrent) setIsLoadingPlans(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isRegisterMode]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+    setSuccessMessage('');
     setIsSubmitting(true);
     triggerHaptic('light');
+
+    if (isRegisterMode) {
+      try {
+        await citasApi.registerUser({
+          firstName,
+          lastName,
+          documentType,
+          documentNumber,
+          email,
+          phone,
+          password,
+          ...(selectedPlanId ? { planId: Number(selectedPlanId) } : {}),
+        });
+        setSubmitSuccess(true);
+        setSuccessMessage('Cuenta creada. Ya puedes iniciar sesión con tu correo y contraseña.');
+        setIdentifier(email);
+        playPushNotificationSound('clinical');
+        triggerHaptic('success');
+        window.setTimeout(() => {
+          setIsRegisterMode(false);
+          setSubmitSuccess(false);
+          setPassword('');
+          setSelectedPlanId('');
+        }, 1800);
+      } catch (error) {
+        setFormError(
+          error instanceof ApiError
+            ? error.message
+            : 'No fue posible crear la cuenta. Inténtalo de nuevo.',
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -54,7 +125,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
       triggerHaptic('success');
 
       setTimeout(() => {
-        onLoginSuccess(isRegisterMode && fullName ? fullName : 'Ana García');
+        onLoginSuccess('Ana García');
       }, 1100);
     }, 1000);
   };
@@ -180,7 +251,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#134074] via-[#006399] to-[#a7c8ff]" />
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 w-full">
-            {/* If Register Mode: Name & Phone */}
+            {plansError && isRegisterMode && (
+              <p role="status" className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                {plansError}
+              </p>
+            )}
+            {formError && (
+              <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-200">
+                {formError}
+              </p>
+            )}
+            {successMessage && (
+              <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                {successMessage}
+              </p>
+            )}
+
+            {/* Registration fields */}
             <AnimatePresence>
               {isRegisterMode && (
                 <motion.div
@@ -190,16 +277,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
                   className="flex flex-col gap-3.5 overflow-hidden"
                 >
                   <div className="flex flex-col gap-1.5 text-left">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      Nombre y Apellidos completos
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-first-name">
+                      Nombres
                     </label>
                     <div className="relative flex items-center">
                       <User className="w-4 h-4 absolute left-3.5 text-slate-400" />
                       <input 
+                        id="register-first-name"
                         type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="ej. Ana García López"
+                        autoComplete="given-name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Tus nombres"
                         required
                         className="w-full h-11 pl-10 pr-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
                       />
@@ -207,27 +296,118 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
                   </div>
 
                   <div className="flex flex-col gap-1.5 text-left">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      Teléfono móvil para avisos SMS
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-last-name">
+                      Apellidos
+                    </label>
+                    <input
+                      id="register-last-name"
+                      type="text"
+                      autoComplete="family-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Tus apellidos"
+                      required
+                      className="w-full h-11 px-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="flex flex-col gap-1.5 text-left">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-document-type">
+                        Tipo de documento
+                      </label>
+                      <input
+                        id="register-document-type"
+                        type="text"
+                        value={documentType}
+                        onChange={(e) => setDocumentType(e.target.value)}
+                        placeholder="CC"
+                        required
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5 text-left">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-document-number">
+                        Número
+                      </label>
+                      <input
+                        id="register-document-number"
+                        type="text"
+                        autoComplete="off"
+                        value={documentNumber}
+                        onChange={(e) => setDocumentNumber(e.target.value)}
+                        placeholder="Documento"
+                        required
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-email">
+                      Correo electrónico
                     </label>
                     <div className="relative flex items-center">
-                      <Phone className="w-4 h-4 absolute left-3.5 text-slate-400" />
-                      <input 
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="ej. +34 612 345 678"
+                      <Mail className="w-4 h-4 absolute left-3.5 text-slate-400" />
+                      <input
+                        id="register-email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tu@correo.com"
                         required
                         className="w-full h-11 pl-10 pr-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
                       />
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-phone">
+                      Teléfono
+                    </label>
+                    <div className="relative flex items-center">
+                      <Phone className="w-4 h-4 absolute left-3.5 text-slate-400" />
+                      <input 
+                        id="register-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Número de contacto"
+                        required
+                        className="w-full h-11 pl-10 pr-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="register-plan">
+                      Plan EPS <span className="font-normal text-slate-400">(opcional)</span>
+                    </label>
+                    <select
+                      id="register-plan"
+                      value={selectedPlanId}
+                      onChange={(e) => setSelectedPlanId(e.target.value)}
+                      disabled={isLoadingPlans || plans.length === 0}
+                      className="w-full h-11 px-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all disabled:opacity-60"
+                    >
+                      <option value="">
+                        {isLoadingPlans ? 'Cargando planes…' : 'Continuar sin plan'}
+                      </option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name} — {plan.epsName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Input 1: Identifier */}
-            <div className="flex flex-col gap-1.5 text-left">
+            {!isRegisterMode && <div className="flex flex-col gap-1.5 text-left">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-200" htmlFor="user-id">
                   Correo o Documento ID
@@ -248,7 +428,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
                   className="w-full h-12 pl-10 pr-3.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006399]/20 focus:border-[#006399] transition-all"
                 />
               </div>
-            </div>
+            </div>}
 
             {/* Input 2: Password */}
             <div className="flex flex-col gap-1.5 text-left">
@@ -321,16 +501,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verificando credenciales...</span>
+                  <span>{isRegisterMode ? 'Creando cuenta...' : 'Verificando credenciales...'}</span>
                 </>
               ) : submitSuccess ? (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Acceso concedido</span>
+                  <span>{isRegisterMode ? 'Cuenta creada' : 'Acceso concedido'}</span>
                 </>
               ) : (
                 <>
-                  <span>{isRegisterMode ? 'Crear Cuenta y Entrar' : 'Iniciar Sesión'}</span>
+                  <span>{isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -409,7 +589,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
             <button
               type="button"
               onClick={() => {
-                setIsRegisterMode(!isRegisterMode);
+                const nextRegisterMode = !isRegisterMode;
+                setIsRegisterMode(nextRegisterMode);
+                setPassword('');
+                setFormError('');
+                setSuccessMessage('');
+                setSubmitSuccess(false);
                 triggerHaptic('light');
               }}
               className="font-semibold text-[#006399] dark:text-sky-400 hover:underline inline-flex items-center gap-0.5 ml-1.5"
