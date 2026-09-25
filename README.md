@@ -22,3 +22,5 @@ El ZIP recibido incluye pantallas de historia clínica, recetas, videollamada y 
 npm run lint
 npm run build
 ```
+
+Para habilitar el hook local de S3 en este clon, ejecuta `git config --local core.hooksPath .githooks`; cada commit revisa secretos staged, typecheck y pruebas del cliente.

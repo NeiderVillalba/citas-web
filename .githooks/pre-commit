@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+git diff --cached --check
+
+staged_paths=$(git diff --cached --name-only --diff-filter=ACMR)
+for path in $staged_paths; do
+  case "$path" in
+    .env.example|*/.env.example) ;;
+    .env|*/.env|.env.*|*/.env.*)
+      printf '%s\n' "Commit blocked: environment file is staged ($path). Keep local values outside Git."
+      exit 1
+      ;;
+  esac
+done
+
+secret_pattern='(-----BEGIN[[:space:]].*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|(AWS_SECRET_ACCESS_KEY|API_KEY|JWT_ACCESS_SECRET|JWT_REFRESH_SECRET|ADMIN_BOOTSTRAP_PASSWORD|DB_PASSWORD)[[:space:]]*=[[:space:]]*[^[:space:]]{16,}|sk_(live|test)_[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9_]{20,})'
+for path in $staged_paths; do
+  case "$path" in
+    .env.example|*/.env.example) continue ;;
+  esac
+  if git show ":$path" | grep -Eiq "$secret_pattern"; then
+    printf '%s\n' "Commit blocked: staged content matches a credential pattern ($path). Remove it and use environment variables."
+    exit 1
+  fi
+done
+
+npm run lint
+npm test
