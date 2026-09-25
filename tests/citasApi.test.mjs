@@ -82,3 +82,56 @@ test('exposes the controlled API error for an invalid plan', async () => {
       && error.code === 'INVALID_PLAN',
   );
 });
+
+test('logs in through the API with cookie transport and keeps access token in memory', async () => {
+  let request;
+  const user = { id: 9, firstName: 'Ada', lastName: 'Prueba', email: 'ada@example.test', roles: ['USER'] };
+  const api = createCitasApi('http://localhost:8080', async (url, init) => {
+    request = { url, init };
+    return Response.json({ accessToken: 'synthetic-access', tokenType: 'Bearer', expiresIn: 900, user });
+  });
+
+  const session = await api.login('ada@example.test', 'synthetic-password');
+
+  assert.equal(request.url, 'http://localhost:8080/api/v1/auth/login');
+  assert.equal(request.init.method, 'POST');
+  assert.equal(request.init.credentials, 'include');
+  assert.equal(request.init.headers['X-Requested-With'], 'citas-web');
+  assert.deepEqual(JSON.parse(request.init.body), { email: 'ada@example.test', password: 'synthetic-password' });
+  assert.deepEqual(session.user, user);
+  assert.equal(api.getAccessToken(), 'synthetic-access');
+});
+
+test('refresh rotates the in-memory access token and logout clears it', async () => {
+  const calls = [];
+  const user = { id: 9, firstName: 'Ada', lastName: 'Prueba', email: 'ada@example.test', roles: ['USER'] };
+  const api = createCitasApi('http://localhost:8080', async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith('/refresh')) {
+      return Response.json({ accessToken: 'renewed-access', tokenType: 'Bearer', expiresIn: 900, user });
+    }
+    return new Response(null, { status: 204 });
+  });
+
+  await api.refresh();
+  assert.equal(api.getAccessToken(), 'renewed-access');
+  await api.logout();
+  assert.equal(api.getAccessToken(), null);
+  assert.equal(calls[0].init.credentials, 'include');
+  assert.equal(calls[0].init.headers['X-Requested-With'], 'citas-web');
+  assert.equal(calls[1].init.method, 'POST');
+});
+
+test('concurrent refresh calls share one rotating-cookie request', async () => {
+  let calls = 0;
+  const user = { id: 9, firstName: 'Ada', lastName: 'Prueba', email: 'ada@example.test', roles: ['USER'] };
+  const api = createCitasApi('http://localhost:8080', async () => {
+    calls += 1;
+    await Promise.resolve();
+    return Response.json({ accessToken: 'renewed-access', tokenType: 'Bearer', expiresIn: 900, user });
+  });
+
+  const [first, second] = await Promise.all([api.refresh(), api.refresh()]);
+  assert.equal(calls, 1);
+  assert.deepEqual(first, second);
+});

@@ -1,14 +1,14 @@
 # AGENTS.md — citas-web
 
-## Estado de bootstrap
+## Estado del frontend
 
-Este repositorio aún no contiene el frontend importado desde Stitch/Google AI Studio. Estas instrucciones rigen el bootstrap sin asumir React o Angular. Después de importar el proyecto, inspeccionar `package.json`, estructura, rutas, estilos, tokens y documentación del diseño aprobado; depurar este archivo con base en esa evidencia.
+El frontend de Stitch/Google AI Studio ya está importado como React 19, TypeScript, Vite y Tailwind CSS. El paquete `medcitas---portal-médico-y-gestión-de-citas.zip` entregado por el usuario coincide con las vistas y estilos del repositorio. Consultar [STITCH_INTEGRATION.md](docs/STITCH_INTEGRATION.md) antes de reemplazar componentes: este repositorio conserva adaptaciones REST y assets locales que no aparecen en el ZIP original.
 
 ## Inspección obligatoria
 
 Antes de proponer cambios:
 
-1. Detectar el stack real del repositorio; puede ser React o Angular.
+1. Revisar el stack React/TypeScript/Vite existente y los componentes importados.
 2. Leer la HU, CA y DoD relevantes.
 3. Revisar rutas, componentes, estilos, tokens y evidencia del diseño aprobado.
 4. Identificar pantallas, componentes, servicios y estados afectados.
