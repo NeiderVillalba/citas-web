@@ -11,6 +11,7 @@ import { BookingView } from './components/BookingView';
 import { MyAppointmentsView } from './components/MyAppointmentsView';
 import { AccountView } from './components/AccountView';
 import { AdminAppointmentsView } from './components/AdminAppointmentsView';
+import { ProfessionalAgendaView } from './components/ProfessionalAgendaView';
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -49,9 +50,10 @@ export default function App() {
     citasApi.refresh()
       .then((session) => {
         if (!active) return;
-        if (session.user.roles.includes('USER') || session.user.roles.includes('ADMIN')) {
+        if (session.user.roles.includes('USER') || session.user.roles.includes('ADMIN') || session.user.roles.includes('PROFESSIONAL')) {
           setUser(session.user);
           if (session.user.roles.includes('ADMIN')) setScreen('admin');
+          else if (session.user.roles.includes('PROFESSIONAL')) setScreen('professional');
           else void loadAppointments();
         } else {
           void citasApi.logout().catch(() => {});
@@ -66,6 +68,9 @@ export default function App() {
     setUser(userFromApi);
     if (userFromApi.roles.includes('ADMIN')) {
       setScreen('admin');
+      setAppointments([]);
+    } else if (userFromApi.roles.includes('PROFESSIONAL')) {
+      setScreen('professional');
       setAppointments([]);
     } else {
       setScreen('dashboard');
@@ -89,7 +94,7 @@ export default function App() {
     <div className="flex min-h-screen w-full flex-col items-center bg-[#f8f9ff] text-[#0b1c30] transition-colors dark:bg-[#0b1420] dark:text-[#f0f4fc]">
       <div className={`relative min-h-screen w-full bg-white shadow-xs dark:bg-slate-900 ${simulatedMobile ? 'my-6 max-w-sm overflow-hidden rounded-[44px] border-[8px] border-slate-900 shadow-[0_25px_60px_rgba(0,42,84,0.25)]' : 'mx-auto max-w-md'}`}>
         {simulatedMobile && <div className="flex justify-center bg-white pb-1 pt-2 dark:bg-slate-900"><span className="h-4 w-24 rounded-full bg-slate-900 dark:bg-slate-800" /></div>}
-        {user && <Header currentScreen={screen} onNavigate={setScreen} dark={dark} onToggleTheme={() => setDark((value) => !value)} userName={user.firstName} simulatedMobile={simulatedMobile} onToggleSimulatedMobile={() => setSimulatedMobile((value) => !value)} isAdmin={user.roles.includes('ADMIN')} />}
+        {user && <Header currentScreen={screen} onNavigate={setScreen} dark={dark} onToggleTheme={() => setDark((value) => !value)} userName={user.firstName} simulatedMobile={simulatedMobile} onToggleSimulatedMobile={() => setSimulatedMobile((value) => !value)} isAdmin={user.roles.includes('ADMIN')} isProfessional={user.roles.includes('PROFESSIONAL')} />}
 
         <AnimatePresence mode="wait">
           <motion.div key={user ? screen : 'login'} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
@@ -98,10 +103,11 @@ export default function App() {
             {user && user.roles.includes('USER') && screen === 'booking' && <BookingView onBooked={loadAppointments} onNavigate={setScreen} />}
             {user && user.roles.includes('USER') && screen === 'history' && <MyAppointmentsView appointments={appointments} loading={appointmentsLoading} error={appointmentsError} onReload={() => void loadAppointments()} onBook={() => setScreen('booking')} />}
             {user && user.roles.includes('ADMIN') && screen === 'admin' && <AdminAppointmentsView />}
+            {user && user.roles.includes('PROFESSIONAL') && screen === 'professional' && <ProfessionalAgendaView />}
             {user && screen === 'settings' && <AccountView user={user} dark={dark} onToggleTheme={() => setDark((value) => !value)} onLogout={handleLogout} />}
           </motion.div>
         </AnimatePresence>
-        {user && <BottomNav currentScreen={screen} onNavigate={setScreen} isAdmin={user.roles.includes('ADMIN')} />}
+        {user && <BottomNav currentScreen={screen} onNavigate={setScreen} isAdmin={user.roles.includes('ADMIN')} isProfessional={user.roles.includes('PROFESSIONAL')} />}
       </div>
     </div>
   );

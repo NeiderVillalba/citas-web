@@ -75,10 +75,22 @@ export interface AppointmentHistoryEntry {
   id: number;
   status: MyAppointment['status'];
   actorId: number | null;
-  source: 'SYSTEM' | 'USER' | 'ADMIN';
+  source: 'SYSTEM' | 'USER' | 'ADMIN' | 'PROFESSIONAL';
   changedAt: string;
   reason: string | null;
 }
+
+export interface ProfessionalAppointment {
+  id: number;
+  patientName: string;
+  specialtyName: string;
+  venueName: string | null;
+  startsAt: string;
+  durationMinutes: number;
+  status: 'APPROVED';
+}
+
+export type AppointmentOutcome = 'COMPLETED' | 'NO_SHOW';
 
 export interface CreateAppointmentRequest {
   professionalId: number;
@@ -260,6 +272,19 @@ export function createCitasApi(baseUrl: string, fetcher: Fetcher = fetch) {
       await authorizedRequest(`/api/v1/admin/appointments/${id}/decision`, {
         method: 'POST',
         body: JSON.stringify({ approve, ...(reason ? { reason } : {}) }),
+      });
+    },
+
+    async getProfessionalAppointments(from: string, to: string, venueId?: number): Promise<ProfessionalAppointment[]> {
+      const query = new URLSearchParams({ from, to });
+      if (venueId != null) query.set('venueId', String(venueId));
+      return (await authorizedRequest(`/api/v1/professional/appointments?${query}`)).json() as Promise<ProfessionalAppointment[]>;
+    },
+
+    async closeProfessionalAppointment(id: number, outcome: AppointmentOutcome): Promise<void> {
+      await authorizedRequest(`/api/v1/professional/appointments/${id}/outcome`, {
+        method: 'POST',
+        body: JSON.stringify({ outcome }),
       });
     },
   };

@@ -177,3 +177,28 @@ test('cancels an appointment and loads its history through the USER endpoints', 
   assert.equal(calls[2].url, 'http://localhost:8080/api/v1/appointments/90/history');
   assert.equal(calls[2].init.headers.Authorization, 'Bearer user-access');
 });
+
+test('loads the PROFESSIONAL agenda with date and venue filters and records outcomes', async () => {
+  const calls = [];
+  const user = { id: 14, firstName: 'Profesional', lastName: 'Demo', email: 'pro@example.test', roles: ['PROFESSIONAL'] };
+  const appointments = [{ id: 81, patientName: 'Paciente Demo', specialtyName: 'Medicina General', venueName: 'HIC', startsAt: '2030-01-20T14:00:00Z', durationMinutes: 30, status: 'APPROVED' }];
+  const api = createCitasApi('http://localhost:8080', async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith('/login')) return Response.json({ accessToken: 'professional-access', tokenType: 'Bearer', expiresIn: 900, user });
+    if (url.includes('/professional/appointments?')) return Response.json(appointments);
+    return Response.json({ id: 81, status: 'COMPLETED' });
+  });
+
+  await api.login('pro@example.test', 'synthetic-password');
+  assert.deepEqual(await api.getProfessionalAppointments('2030-01-20T05:00:00Z', '2030-01-21T05:00:00Z', 2), appointments);
+  await api.closeProfessionalAppointment(81, 'COMPLETED');
+
+  const agendaRequest = new URL(calls[1].url);
+  assert.equal(agendaRequest.pathname, '/api/v1/professional/appointments');
+  assert.equal(agendaRequest.searchParams.get('from'), '2030-01-20T05:00:00Z');
+  assert.equal(agendaRequest.searchParams.get('to'), '2030-01-21T05:00:00Z');
+  assert.equal(agendaRequest.searchParams.get('venueId'), '2');
+  assert.equal(calls[1].init.headers.Authorization, 'Bearer professional-access');
+  assert.equal(calls[2].url, 'http://localhost:8080/api/v1/professional/appointments/81/outcome');
+  assert.deepEqual(JSON.parse(calls[2].init.body), { outcome: 'COMPLETED' });
+});

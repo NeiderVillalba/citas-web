@@ -11,14 +11,15 @@ interface HeaderProps {
   simulatedMobile: boolean;
   onToggleSimulatedMobile: () => void;
   isAdmin?: boolean;
+  isProfessional?: boolean;
 }
 
 const titles: Record<PortalScreen, string> = {
-  dashboard: 'MedCitas', booking: 'Reservar cita', history: 'Mis citas', settings: 'Mi cuenta', admin: 'Solicitudes',
+  dashboard: 'MedCitas', booking: 'Reservar cita', history: 'Mis citas', settings: 'Mi cuenta', admin: 'Solicitudes', professional: 'Agenda profesional',
 };
 
-export function Header({ currentScreen, onNavigate, dark, onToggleTheme, userName, simulatedMobile, onToggleSimulatedMobile, isAdmin = false }: HeaderProps) {
-  const homeScreen: PortalScreen = isAdmin ? 'admin' : 'dashboard';
+export function Header({ currentScreen, onNavigate, dark, onToggleTheme, userName, simulatedMobile, onToggleSimulatedMobile, isAdmin = false, isProfessional = false }: HeaderProps) {
+  const homeScreen: PortalScreen = isAdmin ? 'admin' : isProfessional ? 'professional' : 'dashboard';
   const isHome = currentScreen === homeScreen;
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">

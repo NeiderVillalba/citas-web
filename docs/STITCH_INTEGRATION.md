@@ -33,7 +33,8 @@ La estructura, jerarquía, componentes, estilos y comportamiento visual del port
 - `GET /api/v1/appointments/mine` para inicio y Mis citas.
 - `POST /api/v1/appointments/{id}/cancel` y `GET /api/v1/appointments/{id}/history` para cancelar citas futuras y consultar auditoría.
 - Bandeja ADMIN conectada a `GET /api/v1/admin/appointments/pending` y `POST /api/v1/admin/appointments/{id}/decision`.
+- Agenda PROFESSIONAL conectada a consulta por rango/sede y cierre `COMPLETED`/`NO_SHOW` con endpoints protegidos por rol y ownership.
 
 La sesión se restaura al cargar el portal. La pantalla de acceso presenta solo email y contraseña. Dashboard, reserva y Mis citas muestran datos REST y estados de carga/vacío/error; ya no confirman citas locales simuladas. La navegación oculta historia clínica, recetas, videollamada y avisos simulados, que están fuera del PRD. El estilo, la tipografía, las tarjetas y los controles conservan la base visual Stitch.
 
-La API permite un seed opcional de profesionales y horarios sintéticos (`DEMO_SEED=true`) para el recorrido local. La bandeja ADMIN, cancelación USER e historial ya están conectados al contrato REST. La agenda PROFESSIONAL, perfil, catálogos configurables y reprogramación siguen pendientes; el ZIP no incluye las pantallas correspondientes.
+La API permite un seed opcional de profesionales y horarios sintéticos (`DEMO_SEED=true`) para el recorrido local. Bandeja ADMIN, cancelación/historial USER y agenda/cierre PROFESSIONAL ya están conectados al contrato REST. La gestión de bloques, perfil, catálogos configurables y reprogramación siguen pendientes; el ZIP no incluye esas pantallas.
