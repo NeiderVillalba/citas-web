@@ -1,21 +1,26 @@
 import { motion } from 'motion/react';
-import { CalendarDays, CalendarPlus, Home, UserRound } from 'lucide-react';
+import { CalendarDays, CalendarPlus, ClipboardCheck, Home, UserRound } from 'lucide-react';
 
-export type PortalScreen = 'dashboard' | 'booking' | 'history' | 'settings';
+export type PortalScreen = 'dashboard' | 'booking' | 'history' | 'settings' | 'admin';
 
 interface BottomNavProps {
   currentScreen: PortalScreen;
   onNavigate: (screen: PortalScreen) => void;
+  isAdmin?: boolean;
 }
 
-const tabs = [
-  { id: 'dashboard', label: 'Inicio', icon: Home },
-  { id: 'booking', label: 'Pedir cita', icon: CalendarPlus },
-  { id: 'history', label: 'Mis citas', icon: CalendarDays },
-  { id: 'settings', label: 'Cuenta', icon: UserRound },
-] as const;
-
-export function BottomNav({ currentScreen, onNavigate }: BottomNavProps) {
+export function BottomNav({ currentScreen, onNavigate, isAdmin = false }: BottomNavProps) {
+  const tabs = isAdmin
+    ? [
+        { id: 'admin', label: 'Solicitudes', icon: ClipboardCheck },
+        { id: 'settings', label: 'Cuenta', icon: UserRound },
+      ] as const
+    : [
+        { id: 'dashboard', label: 'Inicio', icon: Home },
+        { id: 'booking', label: 'Pedir cita', icon: CalendarPlus },
+        { id: 'history', label: 'Mis citas', icon: CalendarDays },
+        { id: 'settings', label: 'Cuenta', icon: UserRound },
+      ] as const;
   return (
     <nav aria-label="Navegación principal" className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/95 pb-[env(safe-area-inset-bottom,0px)]">
       <div className="mx-auto flex h-16 max-w-md items-center justify-around px-1">

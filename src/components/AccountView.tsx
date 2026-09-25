@@ -20,7 +20,7 @@ export function AccountView({ user, dark, onToggleTheme, onLogout }: AccountView
           <span className="flex w-12 h-12 items-center justify-center rounded-xl bg-[#134074] text-white"><UserRound className="w-6 h-6" /></span>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{user.firstName} {user.lastName}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Usuario paciente</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{user.roles.includes('ADMIN') ? 'Administrador' : 'Usuario paciente'}</p>
           </div>
         </div>
         <p className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-700 dark:border-slate-700 dark:text-slate-300"><Mail className="w-4 h-4 text-[#006399]" />{user.email}</p>

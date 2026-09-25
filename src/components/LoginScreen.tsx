@@ -114,9 +114,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, isDark
 
     try {
       const session = await citasApi.login(identifier.trim(), password);
-      if (!session.user.roles.includes('USER')) {
+      if (!session.user.roles.includes('USER') && !session.user.roles.includes('ADMIN')) {
         await citasApi.logout();
-        setFormError('Esta vista está disponible para usuarios pacientes.');
+        setFormError('Este perfil aún no tiene una vista habilitada en el portal.');
         return;
       }
       setSubmitSuccess(true);

@@ -135,3 +135,45 @@ test('concurrent refresh calls share one rotating-cookie request', async () => {
   assert.equal(calls, 1);
   assert.deepEqual(first, second);
 });
+
+test('loads admin requests and submits the rejection reason with the access token', async () => {
+  const calls = [];
+  const user = { id: 10, firstName: 'Admin', lastName: 'Demo', email: 'admin@example.test', roles: ['ADMIN'] };
+  const pending = [{ appointment: { id: 45, status: 'REQUESTED' }, patientName: 'Paciente Demo' }];
+  const api = createCitasApi('http://localhost:8080', async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith('/login')) return Response.json({ accessToken: 'admin-access', tokenType: 'Bearer', expiresIn: 900, user });
+    if (url.endsWith('/pending')) return Response.json(pending);
+    return Response.json({ id: 45, status: 'REJECTED' });
+  });
+
+  await api.login('admin@example.test', 'synthetic-password');
+  assert.deepEqual(await api.getPendingAppointments(), pending);
+  await api.decideAppointment(45, false, 'Horario no disponible');
+
+  assert.equal(calls[1].url, 'http://localhost:8080/api/v1/admin/appointments/pending');
+  assert.equal(calls[1].init.headers.Authorization, 'Bearer admin-access');
+  assert.equal(calls[2].url, 'http://localhost:8080/api/v1/admin/appointments/45/decision');
+  assert.deepEqual(JSON.parse(calls[2].init.body), { approve: false, reason: 'Horario no disponible' });
+});
+
+test('cancels an appointment and loads its history through the USER endpoints', async () => {
+  const calls = [];
+  const user = { id: 9, firstName: 'Ada', lastName: 'Prueba', email: 'ada@example.test', roles: ['USER'] };
+  const events = [{ id: 90, status: 'REQUESTED', actorId: null, source: 'SYSTEM', changedAt: '2030-01-01T12:00:00Z', reason: null }];
+  const api = createCitasApi('http://localhost:8080', async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith('/login')) return Response.json({ accessToken: 'user-access', tokenType: 'Bearer', expiresIn: 900, user });
+    if (url.endsWith('/history')) return Response.json(events);
+    return Response.json({ id: 90, status: 'CANCELLED' });
+  });
+
+  await api.login('ada@example.test', 'synthetic-password');
+  await api.cancelAppointment(90);
+  assert.deepEqual(await api.getAppointmentHistory(90), events);
+
+  assert.equal(calls[1].url, 'http://localhost:8080/api/v1/appointments/90/cancel');
+  assert.equal(calls[1].init.headers.Authorization, 'Bearer user-access');
+  assert.equal(calls[2].url, 'http://localhost:8080/api/v1/appointments/90/history');
+  assert.equal(calls[2].init.headers.Authorization, 'Bearer user-access');
+});

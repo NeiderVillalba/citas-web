@@ -12,9 +12,9 @@ npm install
 npm run dev
 ```
 
-La interfaz estará disponible en `http://localhost:3000`. Configura `VITE_API_BASE_URL` en `.env.local` para apuntar a Spring Boot. Registro, sesión, búsqueda de disponibilidad, reserva y Mis citas consumen REST. Si la base está vacía, habilita `DEMO_SEED=true` en la API para cargar profesionales y horarios sintéticos.
+La interfaz estará disponible en `http://localhost:3000`. Configura `VITE_API_BASE_URL` en `.env.local` para apuntar a Spring Boot. Registro, sesión, búsqueda de disponibilidad, reserva, Mis citas, cancelación e historial consumen REST. Los usuarios `ADMIN` entran a la bandeja de solicitudes para aprobar o rechazar citas especializadas. Si la base está vacía, habilita `DEMO_SEED=true` en la API para cargar profesionales y horarios sintéticos.
 
-El ZIP recibido incluye pantallas de historia clínica, recetas, videollamada y notificaciones que no pertenecen al PRD de citas. El portal USER activo muestra solo los flujos de citas; esas pantallas no se ofrecen en la navegación. Las pantallas ADMIN y PROFESSIONAL no estaban en el ZIP y siguen fuera del acople visual de este portal.
+El ZIP recibido incluye pantallas de historia clínica, recetas, videollamada y notificaciones que no pertenecen al PRD de citas. El portal USER activo muestra solo los flujos de citas; esas pantallas no se ofrecen en la navegación. La bandeja ADMIN se implementó con los mismos componentes y estilos Stitch porque el ZIP no incluía esa vista. Las pantallas de agenda PROFESSIONAL siguen pendientes.
 
 ## Verificación
 

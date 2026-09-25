@@ -62,7 +62,22 @@ export interface MyAppointment {
   venueAddress: string | null;
   startsAt: string;
   appointmentType: 'GENERAL' | 'SPECIALIZED';
-  status: 'APPROVED' | 'REQUESTED';
+  status: 'APPROVED' | 'REQUESTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+  rejectionReason: string | null;
+}
+
+export interface AdminAppointment {
+  appointment: MyAppointment;
+  patientName: string;
+}
+
+export interface AppointmentHistoryEntry {
+  id: number;
+  status: MyAppointment['status'];
+  actorId: number | null;
+  source: 'SYSTEM' | 'USER' | 'ADMIN';
+  changedAt: string;
+  reason: string | null;
 }
 
 export interface CreateAppointmentRequest {
@@ -227,6 +242,25 @@ export function createCitasApi(baseUrl: string, fetcher: Fetcher = fetch) {
         method: 'POST',
         body: JSON.stringify(booking),
       })).json() as Promise<CreatedAppointment>;
+    },
+
+    async cancelAppointment(id: number): Promise<void> {
+      await authorizedRequest(`/api/v1/appointments/${id}/cancel`, { method: 'POST' });
+    },
+
+    async getAppointmentHistory(id: number): Promise<AppointmentHistoryEntry[]> {
+      return (await authorizedRequest(`/api/v1/appointments/${id}/history`)).json() as Promise<AppointmentHistoryEntry[]>;
+    },
+
+    async getPendingAppointments(): Promise<AdminAppointment[]> {
+      return (await authorizedRequest('/api/v1/admin/appointments/pending')).json() as Promise<AdminAppointment[]>;
+    },
+
+    async decideAppointment(id: number, approve: boolean, reason?: string): Promise<void> {
+      await authorizedRequest(`/api/v1/admin/appointments/${id}/decision`, {
+        method: 'POST',
+        body: JSON.stringify({ approve, ...(reason ? { reason } : {}) }),
+      });
     },
   };
   return api;

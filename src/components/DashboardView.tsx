@@ -13,7 +13,8 @@ interface DashboardViewProps {
 
 export function DashboardView({ userName, appointments, loading, error, onNavigate, onReload }: DashboardViewProps) {
   const next = [...appointments]
-    .filter((appointment) => new Date(appointment.startsAt).getTime() > Date.now())
+    .filter((appointment) => (appointment.status === 'APPROVED' || appointment.status === 'REQUESTED')
+      && new Date(appointment.startsAt).getTime() > Date.now())
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
 
   return (
